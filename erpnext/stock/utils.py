@@ -672,16 +672,6 @@ def get_or_create_fiscal_year(company="_Test Company"):
 
 	import frappe
 
-	def get_name(obj):
-		"""Safely extract 'name' from dict, _dict, SimpleNamespace, or tuple."""
-		if isinstance(obj, dict):
-			return obj.get("name")
-		if hasattr(obj, "name"):
-			return obj.name
-		if isinstance(obj, (list, tuple)) and len(obj) > 0:
-			return obj[0]
-		return None
-
 	current_date = datetime.today().date()
 
 	matching_fy_list = frappe.get_all(
@@ -696,29 +686,27 @@ def get_or_create_fiscal_year(company="_Test Company"):
 	is_company = False
 	if len(matching_fy_list) > 0:
 		for fy in matching_fy_list:
-			fy_name = get_name(fy)
-			if not fy_name:
-				continue
-			fiscal_year = frappe.get_doc("Fiscal Year", str(fy_name))
-			for years in getattr(fiscal_year, "companies", []):
-				if years.company == company:
-					is_company = True
+			try:
+				fiscal_year = frappe.get_doc("Fiscal Year", fy["name"])
+				for years in fiscal_year.companies:
+					if years.company == company:
+						is_company = True
+						break
+				if is_company:
 					break
-			if is_company:
-				break
+			except Exception as e:
+				print(f"Failed to get Fiscal Year {fy['name']}: {e}")
+				continue
 
 		if not is_company:
 			for rows in matching_fy_list:
-				fy_name = get_name(rows)
-				if not fy_name:
-					continue
 				try:
-					fiscal_year = frappe.get_doc("Fiscal Year", str(fy_name))
+					fiscal_year = frappe.get_doc("Fiscal Year", rows.name)
 					fiscal_year.append("companies", {"company": company})
 					fiscal_year.save()
 					break
 				except Exception as e:
-					print(f"Failed to get Fiscal Year {fy_name}: {e}")
+					print(f"Failed to get Fiscal Year {rows.name}: {e}")
 					continue
 
 	else:
