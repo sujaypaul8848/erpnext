@@ -684,9 +684,18 @@ def get_or_create_fiscal_year(company="_Test Company"):
 		fields=["name", "year_start_date", "year_end_date"],
 	)
 	is_company = False
+
+	def get_name(obj):
+		if isinstance(obj, dict):
+			return obj.get("name")
+		return getattr(obj, "name", None)
+
 	if len(matching_fy_list) > 0:
 		for fy in matching_fy_list:
-			fiscal_year = frappe.get_doc("Fiscal Year", fy["name"])
+			fy_name = get_name(fy)
+			if not fy_name:
+				continue
+			fiscal_year = frappe.get_doc("Fiscal Year", fy_name)
 			for years in fiscal_year.companies:
 				if years.company == company:
 					is_company = True
