@@ -687,7 +687,7 @@ def get_or_create_fiscal_year(company="_Test Company"):
 	if len(matching_fy_list) > 0:
 		for fy in matching_fy_list:
 			try:
-				fiscal_year = frappe.get_doc("Fiscal Year", fy["name"])
+				fiscal_year = frappe.get_doc("Fiscal Year", fy.name)
 				for years in fiscal_year.companies:
 					if years.company == company:
 						is_company = True
@@ -695,7 +695,7 @@ def get_or_create_fiscal_year(company="_Test Company"):
 				if is_company:
 					break
 			except Exception as e:
-				print(f"Failed to get Fiscal Year {fy['name']}: {e}")
+				print(f"Failed to get Fiscal Year {fy.name}: {e}")
 				continue
 
 		if not is_company:
