@@ -674,20 +674,27 @@ def get_or_create_fiscal_year(company="_Test Company"):
 
 	current_date = datetime.today().date()
 
-	matching_fy_list = frappe.get_all(
-		"Fiscal Year",
-		filters={
-			"disabled": 0,
-			"year_start_date": ["<=", current_date],
-			"year_end_date": [">=", current_date],
-		},
-		fields=["name", "year_start_date", "year_end_date"],
+	fiscal_year = frappe.qb.DocType("Fiscal Year")
+	fiscal_year_co = frappe.qb.DocType("Fiscal Year Company")
+	fiscal_year_query = (
+		frappe.qb.from_(fiscal_year)
+		.left_join(fiscal_year_co)
+		.on(fiscal_year_co.parent == fiscal_year.name)
+		.select(
+			fiscal_year.name,
+			fiscal_year_co.company
+		)
+		.where(fiscal_year.disabled == 0)
+		.where(fiscal_year.year_start_date <= current_date)
+		.where(fiscal_year.year_end_date >= current_date)
 	)
+	matching_fy_list = fiscal_year_query.run(as_dict=True)
+
 	is_company = False
 	if len(matching_fy_list) > 0:
 		for fy in matching_fy_list:
 			try:
-				fiscal_year = frappe.get_doc("Fiscal Year", fy.name)
+				fiscal_year = frappe.get_doc("Fiscal Year", fy.get("name"))
 				for years in fiscal_year.companies:
 					if years.company == company:
 						is_company = True
@@ -695,18 +702,18 @@ def get_or_create_fiscal_year(company="_Test Company"):
 				if is_company:
 					break
 			except Exception as e:
-				print(f"Failed to get Fiscal Year {fy.name}: {e}")
+				print(f"Failed to get Fiscal Year {fy.get('name')}: {e}")
 				continue
 
 		if not is_company:
 			for rows in matching_fy_list:
 				try:
-					fiscal_year = frappe.get_doc("Fiscal Year", rows.name)
+					fiscal_year = frappe.get_doc("Fiscal Year", rows.get("name"))
 					fiscal_year.append("companies", {"company": company})
 					fiscal_year.save()
 					break
 				except Exception as e:
-					print(f"Failed to get Fiscal Year {rows.name}: {e}")
+					print(f"Failed to get Fiscal Year {rows.get('name')}: {e}")
 					continue
 
 	else:
