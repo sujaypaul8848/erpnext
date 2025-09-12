@@ -4,6 +4,9 @@ from types import SimpleNamespace
 
 from erpnext.accounts.report.inactive_sales_items import inactive_sales_items as report
 
+from types import SimpleNamespace
+from unittest.mock import patch
+
 class TestInactiveSalesItems(FrappeTestCase):
 	def _mk_filters(self, **kw):
 		base = dict(
@@ -111,15 +114,16 @@ class TestInactiveSalesItems(FrappeTestCase):
 
 	def test_get_territories_with_and_without_filter_TC_ACC_417(self):
 		filters = self._mk_filters(territory="India")
-		frappe.get_all = lambda doctype, fields, filters: [SimpleNamespace(name="India")]
-		result = report.get_territories(filters)
-		self.assertEqual(result[0].name, "India")
 
+		with patch("frappe.get_all", return_value=[SimpleNamespace(name="India")]):
+			result = report.get_territories(filters)
+			self.assertEqual(result[0].name, "India")
 
 		filters = self._mk_filters()
-		frappe.get_all = lambda doctype, fields, filters: [SimpleNamespace(name="USA")]
-		result = report.get_territories(filters)
-		self.assertEqual(result[0].name, "USA")
+
+		with patch("frappe.get_all", return_value=[SimpleNamespace(name="USA")]):
+			result = report.get_territories(filters)
+			self.assertEqual(result[0].name, "USA")
 
 
 	def test_get_items_with_and_without_filters_TC_ACC_418(self):
