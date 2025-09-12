@@ -666,7 +666,7 @@ def get_combine_datetime(posting_date, posting_time):
 
 	return datetime.datetime.combine(posting_date, posting_time)
 
-
+@frappe.whitelist()
 def get_or_create_fiscal_year(company="_Test Company"):
 	from datetime import date, datetime
 
@@ -676,7 +676,7 @@ def get_or_create_fiscal_year(company="_Test Company"):
 
 	fiscal_year = frappe.qb.DocType("Fiscal Year")
 	fiscal_year_co = frappe.qb.DocType("Fiscal Year Company")
-	fiscal_year_query = (
+	matching_fy_query = (
 		frappe.qb.from_(fiscal_year)
 		.left_join(fiscal_year_co)
 		.on(fiscal_year_co.parent == fiscal_year.name)
@@ -687,26 +687,27 @@ def get_or_create_fiscal_year(company="_Test Company"):
 		.where(fiscal_year.disabled == 0)
 		.where(fiscal_year.year_start_date <= current_date)
 		.where(fiscal_year.year_end_date >= current_date)
+		.where(fiscal_year_co.company == company)
 	)
-	matching_fy_list = fiscal_year_query.run(as_dict=True)
+	matching_fy_list = matching_fy_query.run(as_dict=True)
 
 	is_company = False
 	if len(matching_fy_list) > 0:
-		for fy in matching_fy_list:
-			try:
-				fiscal_year = frappe.get_doc("Fiscal Year", fy.get("name"))
-				for years in fiscal_year.companies:
-					if years.company == company:
-						is_company = True
-						break
-				if is_company:
-					break
-			except Exception as e:
-				print(f"Failed to get Fiscal Year {fy.get('name')}: {e}")
-				continue
+		is_company = True
 
-		if not is_company:
-			for rows in matching_fy_list:
+	if not is_company:
+		current_fy_query = (
+			frappe.qb.from_(fiscal_year)
+			.select(
+				fiscal_year.name
+			)
+			.where(fiscal_year.disabled == 0)
+			.where(fiscal_year.year_start_date <= current_date)
+			.where(fiscal_year.year_end_date >= current_date)
+		)
+		current_fy_list = current_fy_query.run(as_dict=True)
+		if len(current_fy_list) > 0:
+			for rows in current_fy_list:
 				try:
 					fiscal_year = frappe.get_doc("Fiscal Year", rows.get("name"))
 					fiscal_year.append("companies", {"company": company})
@@ -715,17 +716,16 @@ def get_or_create_fiscal_year(company="_Test Company"):
 				except Exception as e:
 					print(f"Failed to get Fiscal Year {rows.get('name')}: {e}")
 					continue
+		else:
+			# No fiscal year includes current date — create a new one
+			current_year = current_date.year
+			first_date = date(current_year, 1, 1)
+			last_date = date(current_year, 12, 31)
 
-	else:
-		# No fiscal year includes current date — create a new one
-		current_year = current_date.year
-		first_date = date(current_year, 1, 1)
-		last_date = date(current_year, 12, 31)
-
-		fiscal_year = frappe.new_doc("Fiscal Year")
-		fiscal_year.year = f"{current_year}-{company}"
-		fiscal_year.year_start_date = first_date
-		fiscal_year.year_end_date = last_date
-		fiscal_year.company = company  # Required to avoid overlap error
-		fiscal_year.append("companies", {"company": company})
-		fiscal_year.save()
+			fiscal_year = frappe.new_doc("Fiscal Year")
+			fiscal_year.year = f"{current_year}-{company}"
+			fiscal_year.year_start_date = first_date
+			fiscal_year.year_end_date = last_date
+			fiscal_year.company = company  # Required to avoid overlap error
+			fiscal_year.append("companies", {"company": company})
+			fiscal_year.save()
