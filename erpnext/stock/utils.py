@@ -696,36 +696,15 @@ def get_or_create_fiscal_year(company="_Test Company"):
 		is_company = True
 
 	if not is_company:
-		current_fy_query = (
-			frappe.qb.from_(fiscal_year)
-			.select(
-				fiscal_year.name
-			)
-			.where(fiscal_year.disabled == 0)
-			.where(fiscal_year.year_start_date <= current_date)
-			.where(fiscal_year.year_end_date >= current_date)
-		)
-		current_fy_list = current_fy_query.run(as_dict=True)
-		if len(current_fy_list) > 0:
-			for rows in current_fy_list:
-				try:
-					fiscal_year = frappe.get_doc("Fiscal Year", rows.get("name"))
-					fiscal_year.append("companies", {"company": company})
-					fiscal_year.save()
-					break
-				except Exception as e:
-					print(f"Failed to get Fiscal Year {rows.get('name')}: {e}")
-					continue
-		else:
-			# No fiscal year includes current date — create a new one
-			current_year = current_date.year
-			first_date = date(current_year, 1, 1)
-			last_date = date(current_year, 12, 31)
+		# No fiscal year includes current date — create a new one
+		current_year = current_date.year
+		first_date = date(current_year, 1, 1)
+		last_date = date(current_year, 12, 31)
 
-			fiscal_year = frappe.new_doc("Fiscal Year")
-			fiscal_year.year = f"{current_year}-{company}"
-			fiscal_year.year_start_date = first_date
-			fiscal_year.year_end_date = last_date
-			fiscal_year.company = company  # Required to avoid overlap error
-			fiscal_year.append("companies", {"company": company})
-			fiscal_year.save()
+		fiscal_year = frappe.new_doc("Fiscal Year")
+		fiscal_year.year = f"{current_year}-{company}"
+		fiscal_year.year_start_date = first_date
+		fiscal_year.year_end_date = last_date
+		fiscal_year.company = company  # Required to avoid overlap error
+		fiscal_year.append("companies", {"company": company})
+		fiscal_year.save()
