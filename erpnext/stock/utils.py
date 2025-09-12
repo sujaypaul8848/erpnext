@@ -705,6 +705,5 @@ def get_or_create_fiscal_year(company="_Test Company"):
 		fiscal_year.year = f"{current_year}-{company}"
 		fiscal_year.year_start_date = first_date
 		fiscal_year.year_end_date = last_date
-		fiscal_year.company = company  # Required to avoid overlap error
 		fiscal_year.append("companies", {"company": company})
 		fiscal_year.save()
