@@ -110,12 +110,12 @@ class TestInactiveSalesItems(FrappeTestCase):
 
 	def test_get_territories_with_and_without_filter_TC_ACC_417(self):
 		filters = self._mk_filters(territory="India")
-		frappe.get_all = lambda *args, **kwargs: [dict(name="India")]
+		frappe.get_all = lambda doctype, fields, filters: [dict(name="India")]
 		result = report.get_territories(filters)
 		self.assertEqual(result[0].name, "India")
 
 		filters = self._mk_filters()
-		frappe.get_all = lambda *args, **kwargs: [dict(name="India")]
+		frappe.get_all = lambda doctype, fields, filters: [dict(name="USA")]
 		result = report.get_territories(filters)
 		self.assertEqual(result[0].name, "USA")
 
