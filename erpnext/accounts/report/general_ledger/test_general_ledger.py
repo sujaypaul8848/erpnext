@@ -439,10 +439,10 @@ class TestGeneralLedger(FrappeTestCase):
 		)
 		frappe.db.get_all = lambda *a, **k: []
 		reportview.build_match_conditions = lambda doctype: ""
-		from types import SimpleNamespace
+		
 		general_ledger.get_accounting_dimensions = lambda as_list=False: [
-			SimpleNamespace(fieldname="dim_non_tree", label="Dim NonTree", document_type="NonTreeDoc", disabled=0),
-			SimpleNamespace(fieldname="dim_tree", label="Dim Tree", document_type="TreeDoc", disabled=0),
+			dict(fieldname="dim_non_tree", label="Dim NonTree", document_type="NonTreeDoc", disabled=0),
+			dict(fieldname="dim_tree", label="Dim Tree", document_type="TreeDoc", disabled=0),
 		]
 		general_ledger.get_dimension_with_children = lambda dt, vals: ["T1", "T1-1"]
 		general_ledger.get_cost_centers_with_children = lambda vals: ["_Test Cost Center - _TC"]

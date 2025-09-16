@@ -1072,7 +1072,7 @@ def make_landed_cost_voucher(**args):
 	return lcv
 
 
-def create_landed_cost_voucher(receipt_document_type, receipt_document, company, charges=50):
+def create_landed_cost_voucher(receipt_document_type, receipt_document, company, charges=50, expense_account=None):
 	ref_doc = frappe.get_doc(receipt_document_type, receipt_document)
 
 	lcv = frappe.new_doc("Landed Cost Voucher")
@@ -1091,13 +1091,14 @@ def create_landed_cost_voucher(receipt_document_type, receipt_document, company,
 			}
 		],
 	)
-
+	if not expense_account:
+		expense_account = "Expenses Included In Valuation - TCP1"
 	lcv.set(
 		"taxes",
 		[
 			{
 				"description": "Insurance Charges",
-				"expense_account": "Expenses Included In Valuation - TCP1",
+				"expense_account": expense_account,
 				"amount": charges,
 			}
 		],

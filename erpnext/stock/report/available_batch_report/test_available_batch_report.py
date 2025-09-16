@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import today
@@ -50,7 +48,7 @@ class TestAvailableBatchReport(FrappeTestCase):
 			warehouse_type=None,
 		)
 		default_filters.update(overrides)
-		return SimpleNamespace(**default_filters)
+		return dict(**default_filters)
 
 	def test_get_batchwise_data_to_date_TC_SCK_498(self):
 		filters = self.make_filters(to_date="2025-12-31")

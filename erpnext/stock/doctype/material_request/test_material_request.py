@@ -44,6 +44,7 @@ from erpnext.stock.doctype.material_request.material_request import (
 from erpnext.stock.doctype.pick_list.pick_list import create_stock_entry as pl_stock_entry
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import make_purchase_invoice
 from erpnext.stock.doctype.warehouse.test_warehouse import create_warehouse
+from frappe.defaults import get_global_default
 
 
 class TestMaterialRequest(FrappeTestCase):
@@ -7298,6 +7299,7 @@ class TestMaterialRequest(FrappeTestCase):
 	@change_settings("Buying Settings", {"maintain_same_rate": 1})
 	def test_create_mr_to_2po_to_2pr_serial_return_TC_SCK_193(self):
 		from erpnext.accounts.doctype.payment_entry.test_payment_entry import create_customer
+		from erpnext.stock.utils import get_or_create_fiscal_year
 
 		create_customer("_Test Customer")
 		get_or_create_fiscal_year()
@@ -8842,7 +8844,7 @@ class TestMaterialRequest(FrappeTestCase):
 		else:
 			raw_material_item = raw_material_item[0]
 
-		bom = frappe.db.get_value("BOM", {"item": item, "is_active": 1, "is_default": 1})  # Create or Get BOM
+		bom = frappe.db.get_value("BOM", {"item": item, "is_active": 1, "is_default": 1}, "name")  # Create or Get BOM
 		if not bom:
 			bom = (
 				frappe.get_doc(
@@ -8859,10 +8861,11 @@ class TestMaterialRequest(FrappeTestCase):
 				.name
 			)
 
+		company = get_global_default("company")
 		production_plan = frappe.get_doc(
 			{  # Create Production Plan with po_items (this creates internal link)
 				"doctype": "Production Plan",
-				"company": frappe.defaults.get_user_default("Company"),
+				"company": company,
 				"from_date": frappe.utils.nowdate(),
 				"to_date": frappe.utils.add_days(frappe.utils.nowdate(), 10),
 				"po_items": [
@@ -8870,7 +8873,7 @@ class TestMaterialRequest(FrappeTestCase):
 						"item_code": item,
 						"bom_no": bom,
 						"planned_qty": 10,
-						"warehouse": frappe.get_all("Warehouse", limit=1)[0].name,
+						"warehouse": frappe.get_all("Warehouse",filters={"company": company},limit=1)[0].name,
 					}
 				],
 			}
@@ -8882,13 +8885,13 @@ class TestMaterialRequest(FrappeTestCase):
 				"doctype": "Material Request",
 				"material_request_type": "Purchase",
 				"schedule_date": frappe.utils.add_days(frappe.utils.nowdate(), 5),
-				"company": frappe.defaults.get_user_default("Company"),
+				"company": company,
 				"items": [
 					{
 						"item_code": item,
 						"qty": 10,
 						"schedule_date": frappe.utils.add_days(frappe.utils.nowdate(), 5),
-						"warehouse": frappe.get_all("Warehouse", limit=1)[0].name,
+						"warehouse": frappe.get_all("Warehouse",filters={"company": company},limit=1)[0].name,
 						"production_plan": production_plan.name,
 						"material_request_plan_item": material_request_plan_item_name,
 					}

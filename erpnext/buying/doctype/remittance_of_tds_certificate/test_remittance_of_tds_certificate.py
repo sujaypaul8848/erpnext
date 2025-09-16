@@ -4,12 +4,9 @@
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils.file_manager import save_file
-from types import SimpleNamespace
-import zipfile
-from unittest.mock import patch, MagicMock
-from frappe.utils.file_manager import save_file
 from erpnext.buying.doctype.remittance_of_tds_certificate.remittance_of_tds_certificate import unzip_file
-
+import zipfile
+from unittest.mock import MagicMock, patch
 
 class DummyFile:
     def __init__(self, file_name):
@@ -20,14 +17,14 @@ class TestRemittanceofTDScertificate(FrappeTestCase):
 		from erpnext.buying.doctype.remittance_of_tds_certificate.remittance_of_tds_certificate import get_pan_list 
 
 		certificate_name_list = [
-            SimpleNamespace(file_name='ABCDE1234F_cert.pdf'),
-            SimpleNamespace(file_name='XYZ9876543_tax.pdf'),
-            SimpleNamespace(file_name='NOT_A_PDF.txt'),
-        ]
+			{"file_name": "ABCDE1234F_cert.pdf"},
+			{"file_name": "XYZ9876543_tax.pdf"},
+			{"file_name": "NOT_A_PDF.txt"},
+		]
 
 		expected_result = [
-			{'file_name': 'ABCDE1234F_cert.pdf', 'pan': 'ABCDE1234F'},
-			{'file_name': 'XYZ9876543_tax.pdf', 'pan': 'XYZ9876543'},
+			{"file_name": "ABCDE1234F_cert.pdf", "pan": "ABCDE1234F"},
+			{"file_name": "XYZ9876543_tax.pdf", "pan": "XYZ9876543"},
 		]
 
 		result = get_pan_list(certificate_name_list)
@@ -191,9 +188,11 @@ class TestRemittanceofTDScertificate(FrappeTestCase):
 		
 		mock_unzip_file.return_value = None
 
-		with patch('erpnext.buying.doctype.remittance_of_tds_certificate.remittance_of_tds_certificate.get_email_list') as mock_get_email_list, \
-			 patch('erpnext.buying.doctype.remittance_of_tds_certificate.remittance_of_tds_certificate.create_attachment') as mock_create_attachment, \
-			 patch('frappe.sendmail') as mock_sendmail:
+		with patch(
+			"erpnext.buying.doctype.remittance_of_tds_certificate.remittance_of_tds_certificate.get_email_list"
+		) as mock_get_email_list, patch(
+			"erpnext.buying.doctype.remittance_of_tds_certificate.remittance_of_tds_certificate.create_attachment"
+		) as mock_create_attachment, patch("frappe.sendmail") as mock_sendmail:
 
 			mock_get_email_list.return_value = [{
 				'email_id': 'user@example.com',
