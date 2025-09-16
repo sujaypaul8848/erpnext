@@ -8828,10 +8828,10 @@ class TestMaterialRequest(FrappeTestCase):
 		frappe.set_user("Administrator")
 		# Create or Get Item
 
-		item = frappe.get_all("Item", limit=1)[0].name
+		item = frappe.get_all("Item", limit=1, fields=["name"])[0]["name"]
 
 		raw_material_item = frappe.get_all("Item", filters={"is_stock_item": 1}, limit=1, fields=["name"])
-		if not raw_material_item:
+		if not raw_material_item[0]:
 			raw_material_item = frappe.get_doc(
 				{
 					"doctype": "Item",
@@ -8854,7 +8854,7 @@ class TestMaterialRequest(FrappeTestCase):
 						"is_active": 1,
 						"is_default": 1,
 						"quantity": 1,
-						"items": [{"item_code": raw_material_item.name, "qty": 1, "rate": 100}],
+						"items": [{"item_code": raw_material_item["name"], "qty": 1, "rate": 100}],
 					}
 				)
 				.insert()
@@ -8873,7 +8873,7 @@ class TestMaterialRequest(FrappeTestCase):
 						"item_code": item,
 						"bom_no": bom,
 						"planned_qty": 10,
-						"warehouse": frappe.get_all("Warehouse",filters={"company": company},limit=1)[0].name,
+						"warehouse": frappe.get_all("Warehouse", filters={"company": company}, limit=1, fields=["name"])[0]["name"],
 					}
 				],
 			}
@@ -8891,7 +8891,7 @@ class TestMaterialRequest(FrappeTestCase):
 						"item_code": item,
 						"qty": 10,
 						"schedule_date": frappe.utils.add_days(frappe.utils.nowdate(), 5),
-						"warehouse": frappe.get_all("Warehouse",filters={"company": company},limit=1)[0].name,
+						"warehouse": frappe.get_all("Warehouse", filters={"company": company}, limit=1, fields=["name"])[0]["name"],
 						"production_plan": production_plan.name,
 						"material_request_plan_item": material_request_plan_item_name,
 					}
