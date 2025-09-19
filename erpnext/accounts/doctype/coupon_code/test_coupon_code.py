@@ -45,11 +45,11 @@ def test_create_test_data():
 			}
 		)
 		item.insert()
-	# else:
-	# 	item = frappe.get_doc("Item", "_Test Tesla Car")
-	# 	if not item.gst_hsn_code:
-	# 		item.gst_hsn_code = "01011010"
-	# 		item.save(ignore_permissions=True)
+	else:
+		item = frappe.get_doc("Item", "_Test Tesla Car")
+		if not item.gst_hsn_code:
+			item.gst_hsn_code = "01011010"
+			item.save(ignore_permissions=True)
 	# create test item price
 	item_price = frappe.get_list(
 		"Item Price",
