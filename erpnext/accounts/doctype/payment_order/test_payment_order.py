@@ -147,7 +147,7 @@ class TestPaymentOrder(FrappeTestCase):
 				}
 			]
 		}).insert().save().submit()
-		make_payment_records(payment_order, "_Test Supplier 1")
+		make_payment_records(payment_order, "_Test Supplier 1", "Cash")
 		je_doc = frappe.get_all(
 			"Journal Entry",
 			filters={"payment_order": payment_order.name},
