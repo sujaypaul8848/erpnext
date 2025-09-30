@@ -212,7 +212,6 @@ def make_maintenance_visit():
 		"purposes",
 		{
 			"item_code": "_Test Item",
-			"sales_person": "Sales Team",
 			"description": "Test Item",
 			"work_done": "Test Work Done",
 			"service_person": sales_person.name,
@@ -224,10 +223,15 @@ def make_maintenance_visit():
 
 
 def make_sales_person(name):
-	if frappe.db.exists("Sales Person", {"sales_person_name": name}):
-		return frappe.get_doc("Sales Person", {"sales_person_name": name})
+	sales_person_name = frappe.db.exists("Sales Person", 	)
+	if sales_person_name:
+		doc = frappe.get_doc("Sales Person", name)
+		frappe.log_error("Test", name)
+		return doc
 
-	sales_person = frappe.get_doc({"doctype": "Sales Person", "sales_person_name": name})
-	sales_person.insert(ignore_if_duplicate=True)
-
+	sales_person = frappe.new_doc("Sales Person")
+	sales_person.sales_person_name = name
+	sales_person.is_group = name
+	
+	sales_person.insert(ignore_if_duplicate=True, ignore_permissions=True)
 	return sales_person
