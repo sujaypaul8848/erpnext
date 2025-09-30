@@ -207,7 +207,6 @@ def make_maintenance_visit():
 	mv.completion_status = "Partially Completed"
 
 	sales_person = make_sales_person("Dwight Schrute")
-
 	mv.append(
 		"purposes",
 		{
@@ -223,15 +222,12 @@ def make_maintenance_visit():
 
 
 def make_sales_person(name):
-	sales_person_name = frappe.db.exists("Sales Person", 	)
+	sales_person_name = frappe.db.exists("Sales Person", name)
 	if sales_person_name:
 		doc = frappe.get_doc("Sales Person", name)
-		frappe.log_error("Test", name)
 		return doc
 
 	sales_person = frappe.new_doc("Sales Person")
 	sales_person.sales_person_name = name
-	sales_person.is_group = name
-	
 	sales_person.insert(ignore_if_duplicate=True, ignore_permissions=True)
 	return sales_person
