@@ -206,14 +206,20 @@ def make_maintenance_visit():
 	mv.mntc_date = today()
 	mv.completion_status = "Partially Completed"
 
-	sales_person = make_sales_person("Dwight Schrute")
+	sales_person_name = frappe.db.exists("Sales Person", "Dwight Schrute", cache=True)
+	print(sales_person_name)
+	if not sales_person_name:
+		sales_person = frappe.new_doc("Sales Person")
+		sales_person.sales_person_name = "Dwight Schrute"
+		sales_person.insert(ignore_permissions=True)
+
 	mv.append(
 		"purposes",
 		{
 			"item_code": "_Test Item",
 			"description": "Test Item",
 			"work_done": "Test Work Done",
-			"service_person": sales_person.name,
+			"service_person": "Dwight Schrute",
 		},
 	)
 	mv.insert(ignore_permissions=True)
