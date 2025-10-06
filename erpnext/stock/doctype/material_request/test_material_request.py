@@ -8850,13 +8850,13 @@ class TestMaterialRequest(FrappeTestCase):
 		else:
 			raw_material_item = raw_material_item[0]
 
-		bom = frappe.db.get_value("BOM", {"item": item, "is_active": 1, "is_default": 1}, "name")  # Create or Get BOM
+		bom = frappe.db.get_value("BOM", {"item": item_code, "is_active": 1, "is_default": 1}, "name")  # Create or Get BOM
 		if not bom:
 			bom = (
 				frappe.get_doc(
 					{
 						"doctype": "BOM",
-						"item": item,
+						"item": item_code,
 						"is_active": 1,
 						"is_default": 1,
 						"quantity": 1,
@@ -8876,7 +8876,7 @@ class TestMaterialRequest(FrappeTestCase):
 				"to_date": frappe.utils.add_days(frappe.utils.nowdate(), 10),
 				"po_items": [
 					{
-						"item_code": item,
+						"item_code": item_code,
 						"bom_no": bom,
 						"planned_qty": 10,
 						"warehouse": frappe.get_all("Warehouse", filters={"company": company}, limit=1, fields=["name"])[0]["name"],
@@ -8894,7 +8894,7 @@ class TestMaterialRequest(FrappeTestCase):
 				"company": company,
 				"items": [
 					{
-						"item_code": item,
+						"item_code": item_code,
 						"qty": 10,
 						"schedule_date": frappe.utils.add_days(frappe.utils.nowdate(), 5),
 						"warehouse": frappe.get_all("Warehouse", filters={"company": company}, limit=1, fields=["name"])[0]["name"],
