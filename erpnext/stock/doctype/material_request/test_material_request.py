@@ -8829,7 +8829,7 @@ class TestMaterialRequest(FrappeTestCase):
 		from erpnext.stock.doctype.item.test_item import create_item
 		# Create or Get Item
 
-		item_list = frappe.get_all("Item", limit=1, fields=["name"])[0]["name"]
+		item_list = frappe.get_all("Item", limit=1, fields=["name"])
 		if not item_list:
 			item_code = "_Test Item"
 			create_item(item_code=item_code, valuation_rate=100)
