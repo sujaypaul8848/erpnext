@@ -3556,6 +3556,7 @@ def create_purchase_invoice(**args):
 			"items": [
 				{
 					"doctype": "Purchase Invoice Item",
+					"item_name": args.item_code,
 					"item_code": args.item_code,
 					"qty": args.qty or 1,
 					"rate": args.rate or 90000,
