@@ -8826,9 +8826,15 @@ class TestMaterialRequest(FrappeTestCase):
 
 	def test_update_requested_qty_in_production_plan_tc_pk_004(self):
 		frappe.set_user("Administrator")
+		from erpnext.stock.doctype.item.test_item import create_item
 		# Create or Get Item
 
-		item = frappe.get_all("Item", limit=1, fields=["name"])[0]["name"]
+		item_list = frappe.get_all("Item", limit=1, fields=["name"])[0]["name"]
+		if not item_list:
+			item_code = "_Test Item"
+			create_item(item_code=item_code, valuation_rate=100)
+		else:
+			item_code = item_list[0]["name"]
 
 		raw_material_item = frappe.get_all("Item", filters={"is_stock_item": 1}, limit=1, fields=["name"])
 		if not raw_material_item[0]:
