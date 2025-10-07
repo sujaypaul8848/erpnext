@@ -46,7 +46,11 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		get_or_create_fiscal_year("_Test Company")
 
 		items = create_items()
-		reset("Stock Entry")
+		try:
+			reset("Stock Entry")
+		except AttributeError:
+			frappe.clear_cache()
+		# reset("Stock Entry")
 
 		# delete SLE and BINs for all items
 		frappe.db.sql(
