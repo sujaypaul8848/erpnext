@@ -106,9 +106,10 @@ jobs:
       - name: Clear Bench & Redis Cache
         working-directory: /home/runner/frappe-bench
         run: |
+          redis-cli -p 13000 flushall || true
+          redis-cli -p 11000 flushall || true
           bench --site test_site clear-cache
           bench --site test_site clear-website-cache
-          bench --site test_site clear-data-cache
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
