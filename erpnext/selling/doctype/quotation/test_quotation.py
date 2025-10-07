@@ -1457,7 +1457,7 @@ class TestQuotation(FrappeTestCase):
 		self.assertAlmostEqual(gl_credits["Sales - _TC"], 5000)
 
 	def test_quotation_expired_to_create_sales_order_TC_S_153(self):
-		selling_setting = frappe.get_doc("Selling Settings")
+		selling_setting = frappe.get_doc("Stock Settings")
 		selling_setting.allow_sales_order_creation_for_expired_quotation = 1
 		selling_setting.save()
 
