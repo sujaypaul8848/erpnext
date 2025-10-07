@@ -103,6 +103,13 @@ jobs:
           bench --site test_site set-config developer_mode 1
           bench --site test_site set-config db_host localhost
           bench --site test_site set-config admin_password admin
+      - name: Clear Bench & Redis Cache
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench --site test_site clear-cache
+          bench --site test_site clear-website-cache
+          bench --site test_site clear-redis-cache
+          bench --site test_site clear-redis-queue
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
