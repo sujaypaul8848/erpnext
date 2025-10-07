@@ -108,7 +108,6 @@ jobs:
         run: |
           bench --site test_site clear-cache
           bench --site test_site clear-website-cache
-          bench --site test_site clear-portal-cache
           bench --site test_site clear-data-cache
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
