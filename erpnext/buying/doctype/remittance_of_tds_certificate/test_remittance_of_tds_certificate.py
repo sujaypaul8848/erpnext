@@ -7,6 +7,7 @@ from frappe.utils.file_manager import save_file
 from erpnext.buying.doctype.remittance_of_tds_certificate.remittance_of_tds_certificate import unzip_file
 import zipfile
 from unittest.mock import MagicMock, patch
+import io
 
 class DummyFile:
     def __init__(self, file_name):
@@ -40,9 +41,15 @@ class TestRemittanceofTDScertificate(FrappeTestCase):
 			folder=None,
 			decode=False
 		)
+		zip_buffer = io.BytesIO()
+		with zipfile.ZipFile(zip_buffer, "w") as zf:
+			zf.writestr("dummy.txt", "This is a test file inside zip")
+
+		zip_buffer.seek(0)
+		zip_content = zip_buffer.read()
 		self.test_zip_file = save_file(
-			fname="test_attachment.txt.zip",
-			content=content,
+			fname="test.zip",
+			content=zip_content,
 			dt="User",
 			dn=frappe.session.user,
 			folder=None,
@@ -180,12 +187,13 @@ class TestRemittanceofTDScertificate(FrappeTestCase):
 	def test_unpack_TC_B_227(self, mock_unzip_file):
 		doc = frappe.get_doc({
 			"doctype": "Remittance of TDS certificate",
-			"upload_doc": "/files/test.zip",
+			"upload_doc": f"/files/{self.test_zip_file.file_name}",
 			"subject": "Test Email",
 			"description": "This is a test email body.",
-			"sender_email": "test@example.com"
+			"sender_email": "test@example.com",
+			"email_template": "TDS remittance Demo"
 		})
-		
+
 		mock_unzip_file.return_value = None
 
 		with patch(
@@ -196,7 +204,7 @@ class TestRemittanceofTDScertificate(FrappeTestCase):
 
 			mock_get_email_list.return_value = [{
 				'email_id': 'user@example.com',
-				'file_name': 'test.pdf',
+				'file_name': 'dummy.txt',
 				'pan': 'ABCDE1234F',
 				'supplier_name': 'Test Supplier',
 				'reason': '',
