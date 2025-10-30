@@ -59,6 +59,26 @@ class TestSalesInvoice(FrappeTestCase):
 		)
 		frappe.db.set_single_value("Accounts Settings", "acc_frozen_upto", None)
 
+	@change_settings(
+		"Accounts Settings",
+		{"maintain_same_internal_transaction_rate": 1, "maintain_same_rate_action": "Stop"},
+	)
+	def test_invalid_rate_without_override(self):
+		from frappe import ValidationError
+
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_purchase_invoice
+
+		si = create_sales_invoice(
+			customer="_Test Internal Customer 3", company="_Test Company", is_internal_customer=1, rate=100
+		)
+		pi = make_inter_company_purchase_invoice(si.name)
+		pi.items[0].rate = 120
+
+		with self.assertRaises(ValidationError) as e:
+			pi.insert()
+			pi.submit()
+		self.assertIn("Rate must be same", str(e.exception))
+
 	def tearDown(self):
 		frappe.db.rollback()
 		if frappe.db.get_single_value("Selling Settings", "validate_selling_price"):
@@ -7424,7 +7444,14 @@ class TestSalesInvoice(FrappeTestCase):
 	def test_create_invoice_discounting_TC_ACC_244(self):
 		from .sales_invoice import create_invoice_discounting
 
-		get_dimensions = frappe.get_doc("Accounting Dimension", "Branch")
+		if not frappe.db.exists("Accounting Dimension", "Branch"):
+			get_dimensions = frappe.get_doc({
+				"doctype": "Accounting Dimension",
+				"document_type": "Branch",
+				"name": "Branch"
+			}).insert()
+		else:
+			get_dimensions = frappe.get_doc("Accounting Dimension", "Branch")
 		if get_dimensions:
 			get_dimensions.disabled = 1
 			get_dimensions.save()
@@ -7762,6 +7789,7 @@ def create_sales_invoice(**args):
 	si.conversion_rate = args.conversion_rate or 1
 	si.naming_series = args.naming_series or "T-SINV-"
 	si.cost_center = args.parent_cost_center
+	si.is_internal_customer = args.is_internal_customer or 0
 	si.shipping_rule = args.shipping_rule
 
 	bundle_id = None
@@ -7971,6 +7999,12 @@ def create_internal_parties():
 		supplier_name="_Test Internal Supplier 2",
 		represents_company="_Test Company with perpetual inventory",
 		allowed_to_interact_with="_Test Company with perpetual inventory",
+	)
+
+	create_internal_supplier(
+		supplier_name="_Test Internal Supplier 3",
+		represents_company="_Test Company",
+		allowed_to_interact_with="_Test Company",
 	)
 
 
