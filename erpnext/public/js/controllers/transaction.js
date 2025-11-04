@@ -44,22 +44,23 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 
 			if (item.item_code && item.rate) {
 				frappe.call({
-					method: "erpnext.stock.get_item_details.get_item_tax_template",
+					method: "frappe.client.get_value",
 					args: {
-						args: {
-							item_code: item.item_code,
-							company: frm.doc.company,
-							base_net_rate: item.base_net_rate,
-							tax_category: frm.doc.tax_category,
-							item_tax_template: item.item_tax_template,
-							posting_date: frm.doc.posting_date,
-							bill_date: frm.doc.bill_date,
-							transaction_date: frm.doc.transaction_date,
-						}
+						doctype: "Item Tax",
+						parent: "Item",
+						filters: {
+							parent: item.item_code,
+							minimum_net_rate: ["<=", item.rate],
+							maximum_net_rate: [">=", item.rate]
+						},
+						fieldname: "item_tax_template"
 					},
 					callback: function(r) {
-						const item_tax_template = r.message;
-						frappe.model.set_value(cdt, cdn, 'item_tax_template', item_tax_template);
+						const tax_rule = r.message;
+
+						let matched_template = tax_rule ? tax_rule.item_tax_template : null;
+
+						frappe.model.set_value(cdt, cdn, 'item_tax_template', matched_template);
 					}
 				});
 			}
@@ -984,7 +985,7 @@ erpnext.TransactionController = class TransactionController extends erpnext.taxe
 				}
 
 				var party = me.frm.doc[frappe.model.scrub(party_type)];
-				if(party && me.frm.doc.company) {
+				if(party && me.frm.doc.company && (!me.frm.doc.__onload?.load_after_mapping || !me.frm.doc.get(party_account_field))) {
 					return frappe.call({
 						method: "erpnext.accounts.party.get_party_account",
 						args: {

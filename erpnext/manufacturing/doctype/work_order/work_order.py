@@ -755,34 +755,22 @@ class WorkOrder(Document):
 		)
 
 	def update_ordered_qty(self):
-		if self.production_plan and (self.production_plan_item or self.production_plan_sub_assembly_item):
+		if self.production_plan and self.production_plan_item and not self.production_plan_sub_assembly_item:
 			table = frappe.qb.DocType("Work Order")
 
 			query = (
 				frappe.qb.from_(table)
 				.select(Sum(table.qty))
-				.where((table.production_plan == self.production_plan) & (table.docstatus == 1))
-			)
-
-			if self.production_plan_item:
-				query = query.where(table.production_plan_item == self.production_plan_item)
-			elif self.production_plan_sub_assembly_item:
-				query = query.where(
-					table.production_plan_sub_assembly_item == self.production_plan_sub_assembly_item
+				.where(
+					(table.production_plan == self.production_plan)
+					& (table.production_plan_item == self.production_plan_item)
+					& (table.docstatus == 1)
 				)
+			).run()
 
-			query = query.run()
 			qty = flt(query[0][0]) if query else 0
 
-			if self.production_plan_item:
-				frappe.db.set_value("Production Plan Item", self.production_plan_item, "ordered_qty", qty)
-			elif self.production_plan_sub_assembly_item:
-				frappe.db.set_value(
-					"Production Plan Sub Assembly Item",
-					self.production_plan_sub_assembly_item,
-					"ordered_qty",
-					qty,
-				)
+			frappe.db.set_value("Production Plan Item", self.production_plan_item, "ordered_qty", qty)
 
 			doc = frappe.get_doc("Production Plan", self.production_plan)
 			doc.set_status()
@@ -986,7 +974,9 @@ class WorkOrder(Document):
 
 			if data:
 				dates = [
-					f"{d.posting_date} {d.posting_time}" for d in data if d.posting_date and d.posting_time
+					f"{d.posting_date} {d.posting_time}"
+					for d in data
+					if d.posting_date and d.posting_time
 				]
 				dates = [frappe.utils.get_datetime(date) for date in dates]
 
@@ -1178,7 +1168,7 @@ class WorkOrder(Document):
 			.where(
 				(ste.docstatus == 1)
 				& (ste.work_order == self.name)
-				& (ste.purpose == "Material Transfer for Manufacture")
+				& (ste.purpose == 'Material Transfer for Manufacture')
 				& (ste.is_return == 0)
 			)
 			.groupby(ste_child.item_code, ste_child.original_item)
@@ -1208,7 +1198,7 @@ class WorkOrder(Document):
 			.where(
 				(ste.docstatus == 1)
 				& (ste.work_order == self.name)
-				& (ste.purpose == "Material Transfer for Manufacture")
+				& (ste.purpose == 'Material Transfer for Manufacture')
 				& (ste.is_return == 1)
 			)
 			.groupby(ste_child.item_code, ste_child.original_item)
@@ -1331,7 +1321,7 @@ def get_item_details(item, project=None, skip_bom_info=False, throw=True):
 			frappe.msgprint(msg, raise_exception=throw, indicator="yellow", alert=(not throw))
 
 			return res
-
+		
 	fields = ["allow_alternative_item", "transfer_material_against", "item_name"]
 	if "projects" in frappe.get_installed_apps():
 		fields.append("project")
@@ -1417,8 +1407,6 @@ def add_variant_item(variant_items, wo_doc, bom_no, table_name="items"):
 			existing_row.update(args)
 		else:
 			wo_doc.append(table_name, args)
-
-
 def get_template_rm_item(wo_doc, item_code):
 	for row in wo_doc.required_items:
 		if row.item_code == item_code:
@@ -1525,19 +1513,24 @@ def stop_unstop(work_order, status):
 	return pro_order.status
 
 
-def query_sales_order(production_item: str) -> list[str]:
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def query_sales_order(doctype, txt, searchfield, start, page_len, filters) -> list[str]:
 	return frappe.get_list(
 		"Sales Order",
+		fields=["name"],
 		filters=[
 			["Sales Order", "docstatus", "=", 1],
 		],
 		or_filters=[
-			["Sales Order Item", "item_code", "=", production_item],
-			["Packed Item", "item_code", "=", production_item],
+			["Sales Order Item", "item_code", "=", filters.get("production_item")],
+			["Packed Item", "item_code", "=", filters.get("production_item")],
 		],
-		pluck="name",
+		as_list=True,
 		distinct=True,
 	)
+
+	return out
 
 
 @frappe.whitelist()
@@ -1669,11 +1662,11 @@ def create_job_card(work_order, row, enable_capacity_planning=False, auto_create
 			"hour_rate": row.get("hour_rate"),
 			"serial_no": row.get("serial_no"),
 			"time_required": row.get("time_in_mins"),
-			"source_warehouse": row.get("source_warehouse"),
-			"target_warehouse": row.get("fg_warehouse"),
+ 			"source_warehouse": row.get("source_warehouse"),
+ 			"target_warehouse": row.get("fg_warehouse"),
 			"wip_warehouse": work_order.wip_warehouse or row.get("wip_warehouse")
-			if not work_order.skip_transfer or work_order.from_wip_warehouse
-			else work_order.source_warehouse or row.get("source_warehouse"),
+ 			if not work_order.skip_transfer or work_order.from_wip_warehouse
+ 			else work_order.source_warehouse or row.get("source_warehouse"),
 		}
 	)
 

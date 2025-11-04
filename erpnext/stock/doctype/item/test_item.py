@@ -40,7 +40,7 @@ def make_item(item_code=None, properties=None, uoms=None, barcode=None):
 		item_code = frappe.generate_hash(length=16)
 
 	if frappe.db.exists("Item", item_code):
-		return frappe.get_doc("Item", item_code)
+		return
 
 	item = frappe.get_doc(
 		{

@@ -46,7 +46,8 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		get_or_create_fiscal_year("_Test Company")
 
 		items = create_items()
-		reset("Stock Entry")
+
+		# reset("Stock Entry")
 
 		# delete SLE and BINs for all items
 		frappe.db.sql(
@@ -210,14 +211,16 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		self.assertEqual(outgoing_rate, 100)
 		self.assertEqual(stock_value_difference, -200)
+
+		expense_account = "Expenses Included In Valuation - _TC"
 		frappe.db.set_value(
 			"Company",
 			"_Test Company",
 			"expenses_included_in_valuation",
-			"Expenses Included In Valuation - _TC",
+			expense_account,
 		)
 
-		create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company)
+		create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company, expense_account=expense_account)
 
 		outgoing_rate, stock_value_difference = frappe.db.get_value(
 			"Stock Ledger Entry",
@@ -293,7 +296,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		# -------------------------------
 
 		# Landed Cost Voucher to update the rate of incoming Purchase Return: Additional cost = 50
-		lcv = create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company)
+		lcv = create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company, expense_account="Cost of Goods Sold - _TC")
 
 		# check outgoing_rate for DN after reposting
 		outgoing_rate = abs(
@@ -395,7 +398,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		# -------------------------------
 
 		# Landed Cost Voucher to update the rate of incoming Purchase Return: Additional cost = 50
-		lcv = create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company)
+		lcv = create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company, expense_account="Cost of Goods Sold - _TC")
 
 		# check outgoing_rate for DN after reposting
 		outgoing_rate = abs(
@@ -1111,8 +1114,8 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		frappe.flags.dont_execute_stock_reposts = True
 		self.addCleanup(frappe.flags.pop, "dont_execute_stock_reposts")
 
-		item = make_item().name
-		item = frappe.get_doc("Item", item)
+		item_name = make_item().name
+		item = frappe.get_doc("Item", item_name)
 		item.valuation_rate = 100
 		item.save()
 		warehouse = "_Test Warehouse - _TC"
@@ -1125,13 +1128,13 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			return (
 				frappe.qb.from_(sle)
 				.select("qty_after_transaction")
-				.where((sle.item_code == item) & (sle.warehouse == warehouse) & (sle.is_cancelled == 0))
+				.where((sle.item_code == item_name) & (sle.warehouse == warehouse) & (sle.is_cancelled == 0))
 				.orderby(sle.posting_datetime)
 				.orderby(sle.creation)
 			).run(pluck=True)
 
 		first = make_stock_entry(
-			item_code=item,
+			item_code=item_name,
 			to_warehouse=warehouse,
 			qty=10,
 			posting_time=posting_time,
@@ -1139,7 +1142,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			do_not_submit=True,
 		)
 		second = make_stock_entry(
-			item_code=item,
+			item_code=item_name,
 			to_warehouse=warehouse,
 			qty=1,
 			posting_date=posting_date,
@@ -1157,7 +1160,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		self.assertEqual([1], ordered_qty_after_transaction())
 
 		backdated = make_stock_entry(
-			item_code=item,
+			item_code=item_name,
 			to_warehouse=warehouse,
 			qty=1,
 			posting_date="2021-01-01",

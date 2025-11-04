@@ -27,7 +27,7 @@ def test_create_test_data():
 				"item_code": "_Test Tesla Car",
 				"item_group": "_Test Item Group",
 				"item_name": "_Test Tesla Car",
-				"gst_hsn_code" : "01011010" ,
+				"gst_hsn_code": "01011010",
 				"apply_warehouse_wise_reorder_level": 0,
 				"warehouse": "Stores - _TC",
 				"valuation_rate": 5000,
@@ -46,6 +46,11 @@ def test_create_test_data():
 			}
 		)
 		item.insert()
+	else:
+		item = frappe.get_doc("Item", "_Test Tesla Car")
+		if not item.gst_hsn_code:
+			item.gst_hsn_code = "01011010"
+			item.save(ignore_permissions=True)
 	# create test item price
 	item_price = frappe.get_list(
 		"Item Price",

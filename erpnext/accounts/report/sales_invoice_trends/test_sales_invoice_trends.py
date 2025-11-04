@@ -149,3 +149,20 @@ class TestSalesInvoiceTrends(FrappeTestCase):
 
 		self.assertEqual(first_row[-2], 13.0)
 		self.assertEqual(first_row[-1], 1300.0)
+
+	def test_invoice_without_filter_TC_ACC_600(self):
+		filters = {}
+
+		# Wrap the call in a lambda or function so assertRaises can catch it
+		with self.assertRaises(frappe.ValidationError) as cm:
+			execute(filters=filters)
+
+		# Optional: check the message
+		self.assertIn("Fiscal Year is mandatory", str(cm.exception))
+
+
+# @frappe.whitelist()
+# def call_method():
+#     obj = TestSalesInvoiceTrends()
+#     obj.setUp()
+#     obj.test_invoice_without_filter_TC_ACC_600()

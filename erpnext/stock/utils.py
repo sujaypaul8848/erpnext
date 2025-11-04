@@ -109,8 +109,6 @@ def get_stock_balance(
 
 	from erpnext.stock.stock_ledger import get_previous_sle
 
-	frappe.has_permission("Item", "read", throw=True)
-
 	if posting_date is None:
 		posting_date = nowdate()
 	if posting_time is None:
@@ -668,7 +666,7 @@ def get_combine_datetime(posting_date, posting_time):
 
 	return datetime.datetime.combine(posting_date, posting_time)
 
-
+@frappe.whitelist()
 def get_or_create_fiscal_year(company="_Test Company"):
 	from datetime import date, datetime
 
@@ -676,38 +674,28 @@ def get_or_create_fiscal_year(company="_Test Company"):
 
 	current_date = datetime.today().date()
 
-	matching_fy_list = frappe.get_all(
-		"Fiscal Year",
-		filters={
-			"disabled": 0,
-			"year_start_date": ["<=", current_date],
-			"year_end_date": [">=", current_date],
-		},
-		fields=["name", "year_start_date", "year_end_date"],
+	fiscal_year = frappe.qb.DocType("Fiscal Year")
+	fiscal_year_co = frappe.qb.DocType("Fiscal Year Company")
+	matching_fy_query = (
+		frappe.qb.from_(fiscal_year)
+		.left_join(fiscal_year_co)
+		.on(fiscal_year_co.parent == fiscal_year.name)
+		.select(
+			fiscal_year.name,
+			fiscal_year_co.company
+		)
+		.where(fiscal_year.disabled == 0)
+		.where(fiscal_year.year_start_date <= current_date)
+		.where(fiscal_year.year_end_date >= current_date)
+		.where(fiscal_year_co.company == company)
 	)
+	matching_fy_list = matching_fy_query.run(as_dict=True)
+
 	is_company = False
 	if len(matching_fy_list) > 0:
-		for fy in matching_fy_list:
-			fiscal_year = frappe.get_doc("Fiscal Year", fy["name"])
-			for years in fiscal_year.companies:
-				if years.company == company:
-					is_company = True
-					break
-			if is_company:
-				break
+		is_company = True
 
-		if not is_company:
-			for rows in matching_fy_list:
-				try:
-					fiscal_year = frappe.get_doc("Fiscal Year", rows.name)
-					fiscal_year.append("companies", {"company": company})
-					fiscal_year.save()
-					break
-				except Exception as e:
-					print(f"Failed to get Fiscal Year {fy['name']}: {e}")
-					continue
-
-	else:
+	if not is_company:
 		# No fiscal year includes current date — create a new one
 		current_year = current_date.year
 		first_date = date(current_year, 1, 1)
@@ -717,6 +705,5 @@ def get_or_create_fiscal_year(company="_Test Company"):
 		fiscal_year.year = f"{current_year}-{company}"
 		fiscal_year.year_start_date = first_date
 		fiscal_year.year_end_date = last_date
-		fiscal_year.company = company  # Required to avoid overlap error
 		fiscal_year.append("companies", {"company": company})
 		fiscal_year.save()

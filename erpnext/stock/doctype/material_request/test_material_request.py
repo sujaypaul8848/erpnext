@@ -44,6 +44,7 @@ from erpnext.stock.doctype.material_request.material_request import (
 from erpnext.stock.doctype.pick_list.pick_list import create_stock_entry as pl_stock_entry
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import make_purchase_invoice
 from erpnext.stock.doctype.warehouse.test_warehouse import create_warehouse
+from frappe.defaults import get_global_default
 
 
 class TestMaterialRequest(FrappeTestCase):
@@ -7300,8 +7301,9 @@ class TestMaterialRequest(FrappeTestCase):
 		from erpnext.accounts.doctype.payment_entry.test_payment_entry import create_customer
 		from erpnext.stock.utils import get_or_create_fiscal_year
 
-		company = create_company()
 		create_customer("_Test Customer")
+		get_or_create_fiscal_year()
+		company = create_company()
 		warehouse = "Stores - _TC"
 		create_supplier(supplier_name="_Test Supplier")
 		item_code = "_Test Item With Serial No"
@@ -8824,12 +8826,18 @@ class TestMaterialRequest(FrappeTestCase):
 
 	def test_update_requested_qty_in_production_plan_tc_pk_004(self):
 		frappe.set_user("Administrator")
+		from erpnext.stock.doctype.item.test_item import create_item
 		# Create or Get Item
 
-		item = frappe.get_all("Item", limit=1)[0].name
+		item_list = frappe.get_all("Item", limit=1, fields=["name"])
+		if not item_list:
+			item_code = "_Test Item"
+			create_item(item_code=item_code, valuation_rate=100)
+		else:
+			item_code = item_list[0]["name"]
 
 		raw_material_item = frappe.get_all("Item", filters={"is_stock_item": 1}, limit=1, fields=["name"])
-		if not raw_material_item:
+		if not raw_material_item[0]:
 			raw_material_item = frappe.get_doc(
 				{
 					"doctype": "Item",
@@ -8842,35 +8850,36 @@ class TestMaterialRequest(FrappeTestCase):
 		else:
 			raw_material_item = raw_material_item[0]
 
-		bom = frappe.db.get_value("BOM", {"item": item, "is_active": 1, "is_default": 1})  # Create or Get BOM
+		bom = frappe.db.get_value("BOM", {"item": item_code, "is_active": 1, "is_default": 1}, "name")  # Create or Get BOM
 		if not bom:
 			bom = (
 				frappe.get_doc(
 					{
 						"doctype": "BOM",
-						"item": item,
+						"item": item_code,
 						"is_active": 1,
 						"is_default": 1,
 						"quantity": 1,
-						"items": [{"item_code": raw_material_item.name, "qty": 1, "rate": 100}],
+						"items": [{"item_code": raw_material_item["name"], "qty": 1, "rate": 100}],
 					}
 				)
 				.insert()
 				.name
 			)
 
+		company = get_global_default("company")
 		production_plan = frappe.get_doc(
 			{  # Create Production Plan with po_items (this creates internal link)
 				"doctype": "Production Plan",
-				"company": frappe.defaults.get_user_default("Company"),
+				"company": company,
 				"from_date": frappe.utils.nowdate(),
 				"to_date": frappe.utils.add_days(frappe.utils.nowdate(), 10),
 				"po_items": [
 					{
-						"item_code": item,
+						"item_code": item_code,
 						"bom_no": bom,
 						"planned_qty": 10,
-						"warehouse": frappe.get_all("Warehouse", limit=1)[0].name,
+						"warehouse": frappe.get_all("Warehouse", filters={"company": company}, limit=1, fields=["name"])[0]["name"],
 					}
 				],
 			}
@@ -8882,13 +8891,13 @@ class TestMaterialRequest(FrappeTestCase):
 				"doctype": "Material Request",
 				"material_request_type": "Purchase",
 				"schedule_date": frappe.utils.add_days(frappe.utils.nowdate(), 5),
-				"company": frappe.defaults.get_user_default("Company"),
+				"company": company,
 				"items": [
 					{
-						"item_code": item,
+						"item_code": item_code,
 						"qty": 10,
 						"schedule_date": frappe.utils.add_days(frappe.utils.nowdate(), 5),
-						"warehouse": frappe.get_all("Warehouse", limit=1)[0].name,
+						"warehouse": frappe.get_all("Warehouse", filters={"company": company}, limit=1, fields=["name"])[0]["name"],
 						"production_plan": production_plan.name,
 						"material_request_plan_item": material_request_plan_item_name,
 					}

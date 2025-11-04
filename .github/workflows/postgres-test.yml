@@ -2,7 +2,7 @@ name: Postgres ERP Test
 on:
   push:
     branches:
-      - pre-prod-develop
+      - pre-prod
   pull_request:
 concurrency:
   group: postgres-erp-${{ github.event.number }}
@@ -74,13 +74,13 @@ jobs:
       - name: Install Apps
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app erpnext https://github.com/8848digital/erpnext.git --branch pre-prod-develop
-          bench get-app https://Abhishek8848:${{secrets.GH_PAT}}@github.com/8848digital/ERPNext-India.git --branch pre-prod
+          bench get-app erpnext https://github.com/sujaypaul8848/erpnext.git --branch pre-prod
+          bench get-app https://sujaypaul8848:${{secrets.GH_PAT}}@github.com/8848digital/ERPNext-India.git --branch pre-prod
           bench get-app https://github.com/8848digital/india_compliance.git --branch pre-prod
           bench get-app https://github.com/8848digital/Assets --branch pre-prod
-          bench get-app https://Abhishek8848:${{secrets.GH_PAT}}@github.com/8848digital/CRM --branch pre-prod
-          bench get-app https://Abhishek8848:${{secrets.GH_PAT}}@github.com/8848digital/projects.git --branch pre-prod
-          bench get-app https://Abhishek8848:${{secrets.GH_PAT}}@github.com/8848digital/sales_commission.git --branch pre-prod
+          bench get-app https://sujaypaul8848:${{secrets.GH_PAT}}@github.com/8848digital/CRM --branch pre-prod
+          bench get-app https://sujaypaul8848:${{secrets.GH_PAT}}@github.com/8848digital/projects.git --branch pre-prod
+          bench get-app https://sujaypaul8848:${{secrets.GH_PAT}}@github.com/8848digital/sales_commission.git --branch pre-prod
           bench get-app --branch version-15 payments
           bench setup requirements --dev
       - name: Create Site
@@ -103,6 +103,11 @@ jobs:
           bench --site test_site set-config developer_mode 1
           bench --site test_site set-config db_host localhost
           bench --site test_site set-config admin_password admin
+      - name: Clear Bench & Redis Cache
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench --site test_site clear-cache
+          bench --site test_site clear-website-cache
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |

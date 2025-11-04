@@ -211,7 +211,6 @@ def validate_cancellation(kargs):
 				doc.flags.ignore_permissions = True
 				doc.cancel()
 
-
 def set_as_cancel(voucher_type, voucher_no):
 	frappe.db.sql(
 		"""update `tabStock Ledger Entry` set is_cancelled=1,
@@ -411,20 +410,20 @@ def create_json_gz_file(data, doc, file_name=None) -> str:
 
 	if not file_name:
 		return create_file(doc, compressed_content)
-
+	
 	else:
 		file_doc = frappe.get_doc("File", file_name)
 		if "/frappe_s3_attachment." in file_doc.file_url:
 			file_doc.delete()
 			return create_file(doc, compressed_content)
-
+		
 		path = file_doc.get_full_path()
 
 		with open(path, "wb") as f:
 			f.write(compressed_content)
 
 		return doc.reposting_data_file
-
+	
 
 def create_file(doc, compressed_content):
 	json_filename = f"{scrub(doc.doctype)}-{scrub(doc.name)}.json.gz"
@@ -463,7 +462,7 @@ def get_items_to_be_repost(voucher_type=None, voucher_no=None, doc=None, reposti
 		# 	order_by="creation asc",
 		# 	group_by="item_code, warehouse",
 		# )
-
+		
 		# postgres
 		items_to_be_repost = frappe.db.sql(
 			"""
@@ -475,7 +474,7 @@ def get_items_to_be_repost(voucher_type=None, voucher_no=None, doc=None, reposti
 			ORDER BY creation ASC
 			""",
 			{"voucher_type": voucher_type, "voucher_no": voucher_no},
-			as_dict=True,
+			as_dict=True
 		)
 
 	return items_to_be_repost or []
@@ -888,7 +887,10 @@ class update_entries_after:
 						self.wh_data.valuation_rate
 					)
 
-					if sle.actual_qty < 0 and self.wh_data.qty_after_transaction != 0:
+					if (
+						sle.actual_qty < 0
+						and flt(self.wh_data.qty_after_transaction, self.flt_precision) != 0
+					):
 						self.wh_data.valuation_rate = flt(
 							self.wh_data.stock_value, self.currency_precision
 						) / flt(self.wh_data.qty_after_transaction, self.flt_precision)
@@ -912,11 +914,8 @@ class update_entries_after:
 		if not sle.is_adjustment_entry or not self.args.get("sle_id"):
 			sle.stock_value_difference = stock_value_difference
 		elif sle.is_adjustment_entry and not self.args.get("sle_id"):
-			sle.stock_value_difference = (
-				get_stock_value_difference(
-					sle.item_code, sle.warehouse, sle.posting_date, sle.posting_time, sle.voucher_no
-				)
-				* -1
+			sle.stock_value_difference = get_stock_value_difference(
+				sle.item_code, sle.warehouse, sle.posting_date, sle.posting_time, sle.voucher_no
 			)
 
 		sle.doctype = "Stock Ledger Entry"
@@ -1699,7 +1698,7 @@ def get_stock_ledger_entries(
 
 	if extra_cond:
 		conditions += f"{extra_cond}"
-
+	
 	# nosemgrep
 
 	return frappe.db.sql(
