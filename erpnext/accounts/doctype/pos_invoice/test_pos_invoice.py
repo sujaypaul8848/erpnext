@@ -12,6 +12,7 @@ from frappe.utils import cint, flt, getdate, today
 from erpnext.accounts.doctype.mode_of_payment.test_mode_of_payment import (
 	set_default_account_for_mode_of_payment,
 )
+from frappe.utils import now_datetime
 from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import make_closing_entry_from_opening
 from erpnext.accounts.doctype.pos_invoice.pos_invoice import PartialPaymentValidationError, make_sales_return
 from erpnext.accounts.doctype.pos_opening_entry.test_pos_opening_entry import create_opening_entry
@@ -1300,6 +1301,19 @@ class TestPOSInvoice(unittest.TestCase):
 		self.assertEqual(inv.status, "Paid")
 
 	def test_pos_inoivce_with_payment_terms_TC_S_123(self):
+		# Step 1: Create POS Opening Entry (REQUIRED)
+		opening_entry = frappe.get_doc(
+			{
+				"doctype": "POS Opening Entry",
+				"company": "_Test Company",
+				"pos_profile": "_Test POS Profile",
+				"user": frappe.session.user,
+				"posting_date": frappe.utils.today(),
+				"period_start_date": now_datetime(),
+			}
+		)
+		opening_entry.insert(ignore_permissions=True)
+		opening_entry.submit()
 		inv = create_pos_invoice(rate=3000, do_not_save=1)
 		inv.save()
 		inv.include_payment = 1
